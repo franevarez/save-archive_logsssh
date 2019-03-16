@@ -11,6 +11,8 @@ import tarfile
 
 os_path = ''
 
+flat_print_logs = True
+
 #principal object per getlogs
 class log_listener():
     def __init__(self, name, configuration, generalRute):
@@ -41,7 +43,8 @@ class log_listener():
 
             # for line in stdout.readlines():
             #     sys.stdout.write(line)
-            output_file = open(os.path.join(output_folder, "System.log"), "w")
+            output_file = open(os.path.join(
+                output_folder, "System.log"), "w")
 
             process_ = None
             process_ = threading.Thread(target=self.clean_directory())
@@ -59,11 +62,13 @@ class log_listener():
                     process_.start()
                 else:
                     output_file.write(line)
-                print(line, end="")
+                if flat_print_logs:
+                    print(line, end="")
             print('finished.')
             
         except Exception:
             print(traceback.format_exc())
+            self.run()
         #print(self.check_and_make_dir())
        
     def check_and_make_dir(self, date):

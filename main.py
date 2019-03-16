@@ -8,6 +8,7 @@ import configparser
 import sys
 import traceback
 import source.process as process
+import source.key_listener as key_listener
 
 list_logs = []
 logs_configs = []
@@ -36,6 +37,15 @@ try:
         process_ = None
         process_ = threading.Thread(target=run_logs.run)
         process_.start()
+
+    InKey = key_listener._GetCh()
+
+    c = InKey()
+    while c != 3:
+     if c >= 0:
+        print(c)
+        process.flat_print_logs = False
+     c = InKey()
 
 except Exception as e:
     if debug_mode:
