@@ -4,12 +4,14 @@ import os
 import sys
 import datetime
 import traceback
-import paramiko
-import shutil
+from paramiko import SSHClient, AutoAddPolicy
+from shutil import move, rmtree
 import threading
 import tarfile
 
 os_path = ''
+
+flag_print_logs = True
 
 #principal object per getlogs
 class log_listener():
@@ -33,23 +35,27 @@ class log_listener():
         output_folder = self.check_and_make_dir(date)
         print(output_folder)
         try:
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh = SSHClient()
+            ssh.set_missing_host_key_policy(AutoAddPolicy())
             ssh.connect(self.ip, self.port, self.user, self.password)
 
             stdin, stdout, stderr = ssh.exec_command('tail -f '+self.rute)
 
             # for line in stdout.readlines():
             #     sys.stdout.write(line)
-            output_file = open(os.path.join(output_folder, "System.log"), "w")
+            output_file = open(os.path.join(
+                output_folder, "System.log"), "w", encoding="utf-8", errors="ignore")
 
             process_ = None
             process_ = threading.Thread(target=self.clean_directory())
             process_.start()
 
             for line in iter(stdout.readline, ""):
+                print(os.path.getsize(output_folder + "\\System.log"))
                 if date.day != datetime.datetime.now().day:
-                    date = datetime.datetime.now()#necesary per if
+                    exit()
+                
+                elif (os.path.getsize(output_folder + "\\System.log")) > 150000000:
                     output_file.close()
                     output_folder = self.check_and_make_dir(date)
                     output_file = open(os.path.join(
@@ -57,18 +63,26 @@ class log_listener():
                     process_ = None
                     process_ = threading.Thread(target=self.clean_directory())
                     process_.start()
+
                 else:
                     output_file.write(line)
-                print(line, end="")
+                    
+                if flag_print_logs:
+                    try:
+                        print(line, end="")
+                    except:
+                        pass
+                        
             print('finished.')
             
         except Exception:
             print(traceback.format_exc())
+            #self.run()
         #print(self.check_and_make_dir())
        
-    def check_and_make_dir(self, date):
+    def check_and_make_dir(self, date:str):
 
-        date_name = "\\%s-%s-%s" % (date.day, date.month, date.year)
+        date_name = "\\%s-%s-%s" % (date.year, date.month, date.day)
         try:
             if not os.path.isdir(self.output+'\\'+self.name):
                 os.mkdir(self.output+'\\'+self.name)
@@ -80,9 +94,12 @@ class log_listener():
             else:
                 c = 1
                 while True:
-                    if not os.path.isdir(self.output_dir+date_name+"_"+str(c)):
-                        os.mkdir(self.output_dir+date_name+"_"+str(c))
-                        return self.output_dir+date_name+"_"+str(c)
+                    if os.path.isfile(self.output_dir+date_name+"\\System.log") and not os.path.isfile(self.output_dir+date_name + "\\System"+str(c)+".log"):
+                        archivo = self.output_dir+date_name+"\\System.log"
+                        nombre_nuevo = self.output_dir + \
+                            date_name+"\\System"+str(c)+".log"
+                        os.rename(archivo, nombre_nuevo)
+                        return self.output_dir+date_name
                     c += 1
             
         except Exception :
@@ -94,7 +111,7 @@ class log_listener():
                                   key=lambda x: os.path.getctime(os.path.join(self.output_dir, x)))
 
             while len(list_folders) > int(self.days_to_save) :
-                shutil.rmtree(self.output_dir+'\\'+list_folders[0])
+                rmtree(self.output_dir+'\\'+list_folders[0])
                 print(list_folders.pop(0))
 
             while len(list_folders) > 1:
@@ -106,7 +123,7 @@ class log_listener():
                     tar.add(target_path+"System.log",
                             arcname=os.path.basename(target_path+"System.log"))
                     tar.close()
-                    shutil.move(self.output_dir+"\\System.tar.gz",
+                    move(self.output_dir+"\\System.tar.gz",
                                  target_path+"\\System.tar.gz")
                     os.remove(target_path+"System.log")
 
