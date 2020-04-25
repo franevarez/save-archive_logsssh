@@ -51,11 +51,8 @@ class log_listener():
             process_.start()
 
             for line in iter(stdout.readline, ""):
-                print(os.path.getsize(output_folder + "\\System.log"))
                 if date.day != datetime.datetime.now().day:
-                    exit()
-                
-                elif (os.path.getsize(output_folder + "\\System.log")) > 150000000:
+                    date = datetime.datetime.now()#necesary per if
                     output_file.close()
                     output_folder = self.check_and_make_dir(date)
                     output_file = open(os.path.join(
@@ -63,7 +60,6 @@ class log_listener():
                     process_ = None
                     process_ = threading.Thread(target=self.clean_directory())
                     process_.start()
-
                 else:
                     output_file.write(line)
                     
@@ -94,12 +90,9 @@ class log_listener():
             else:
                 c = 1
                 while True:
-                    if os.path.isfile(self.output_dir+date_name+"\\System.log") and not os.path.isfile(self.output_dir+date_name + "\\System"+str(c)+".log"):
-                        archivo = self.output_dir+date_name+"\\System.log"
-                        nombre_nuevo = self.output_dir + \
-                            date_name+"\\System"+str(c)+".log"
-                        os.rename(archivo, nombre_nuevo)
-                        return self.output_dir+date_name
+                    if not os.path.isdir(self.output_dir+date_name+"_"+str(c)):
+                        os.mkdir(self.output_dir+date_name+"_"+str(c))
+                        return self.output_dir+date_name+"_"+str(c)
                     c += 1
             
         except Exception :
