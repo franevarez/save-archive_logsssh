@@ -27,5 +27,3 @@ Example of block of connection:
     password = test-password
     rute_log = /var/log/apache2/access.log
     days_to_save = 15
-
-![demo](media/demo.gif "demo")
